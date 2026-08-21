@@ -1,0 +1,5 @@
+node_modules/
+*.log
+# env/ is tracked: the panorama the README's ?cubemap= link names has to be on
+# the server, or a fresh clone opens on the procedural sky and the photographed
+# environment silently never appears. It is CC0, see env/README.md.

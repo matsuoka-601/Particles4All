@@ -1,0 +1,14 @@
+# Netlify: there is nothing to build. The site is the repository root - ES
+# modules, WGSL inside them, one panorama and the preset files - so `publish`
+# is "." and there is no build command at all.
+#
+# WebGPU needs a secure context, which Netlify's HTTPS provides. Nothing here
+# uses absolute paths, so the site works at the root of a Netlify domain and
+# equally under a subpath.
+[build]
+  publish = "."
+
+# The modules carry their own ?v= cache buster and the preset files are fetched
+# with cache: "no-cache", so Netlify's default (ETag revalidation) is what this
+# wants: an edit to a preset shows up on reload, and a module that did not
+# change is not re-downloaded.
