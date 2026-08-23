@@ -11,6 +11,8 @@ The features of this repo are like below:
 - **Reconstruct a smooth fluid surface using anisotropic kernels** presented in [Reconstructing Surfaces of Particle-Based Fluids Using Anisotropic Kernels](https://cs.nyu.edu/~exact/doc/anisotropic.pdf).
 - **Realistic surface tension** is realized based on the method presented in  [Versatile surface tension and adhesion for SPH fluids](https://dl.acm.org/doi/10.1145/2508363.2508395).
 
+<img width="800" height="482" alt="レコーディング 2026-08-22 140438" src="https://github.com/user-attachments/assets/ac4e999f-245a-49df-afd7-9222457e04f9" />
+
 ## Simulation
 ### Unified particle physics
 (TODO: write)
