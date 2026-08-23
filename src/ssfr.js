@@ -96,6 +96,13 @@ export class FluidSSFR {
   }
 
   buildTargets(w, h) {
+    // Half resolution is gated on the blur being wide enough to hide it, so
+    // *lowering* thicknessFilterSize below 4 turns half-res off and makes the
+    // thickness splat - one instanced quad per particle - cover four times the
+    // pixels. A smaller blur is therefore more expensive, not less: measured on
+    // the medium preset at 3200x2000 on an M3 Pro, blur 0 rendered in 38.5 ms
+    // against 34.9 ms at blur 24. Worth knowing before reaching for this to
+    // save time.
     const half = this.thicknessHalfRes && this.thicknessFilterSize >= 4;
     const tw = half ? (w + 1) >> 1 : w;
     const th = half ? (h + 1) >> 1 : h;
