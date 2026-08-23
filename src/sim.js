@@ -48,6 +48,7 @@ export class Sim {
     make('scanBlocks', S.scanBlocksWGSL);
     make('scanAdd', S.scanAddWGSL);
     make('scatter', S.scatterWGSL);
+    make('scatterPhase', S.scatterPhaseWGSL);
     make('lambda', S.lambdaWGSL);
     make('delta', S.deltaWGSL);
     make('bodyClear', S.bodyClearWGSL);
@@ -98,6 +99,7 @@ export class Sim {
       alloc('body' + s, vec4); alloc('rest' + s, vec4);
     }
     alloc('lambda', cap * 4);
+    alloc('slotOf', cap * 4);
     alloc('density', cap * 4);
     alloc('corr', vec4);
     alloc('normal', vec4);
@@ -240,6 +242,7 @@ export class Sim {
     run('scanBlocks', 'scanBlocks', 1);
     run('scanAdd', 'scanAdd', cG);
     run('scatter', `scatter${par}`, nG);
+    run('scatterPhase', `scatterPhase${par}`, nG);
     pass2.end();
     this.dev.queue.submit([enc.finish()]);
     this.parity ^= 1;
@@ -306,7 +309,9 @@ export class Sim {
       g[`scatter${par}`] = this.bg('scatter', [
         B['pos' + s], B['vel' + s], B['pred' + s],
         B['pos' + o], B['vel' + o], B['pred' + o],
-        B.cellStart, B.cursor, B['body' + s], B['rest' + s], B['body' + o], B['rest' + o]]);
+        B.cellStart, B.cursor, B.slotOf]);
+      g[`scatterPhase${par}`] = this.bg('scatterPhase', [
+        B['body' + s], B['rest' + s], B['body' + o], B['rest' + o], B.slotOf]);
 
       g[`velFromPos${par}`] = this.bg('velFromPos', [B['pos' + s], B['vel' + s], B['pred' + s]]);
       g[`xsph${par}`] = this.bg('xsph', [B['pred' + s], B['vel' + s], B.density, B.corr, B.cellStart]);
@@ -477,6 +482,7 @@ export class Sim {
       run2('scanBlocks', 'scanBlocks', 1);
       run2('scanAdd', 'scanAdd', cG);
       run2('scatter', `scatter${par}`, nG);
+      run2('scatterPhase', `scatterPhase${par}`, nG);
       pass2.end();
       this.parity ^= 1;
       this.predParity = this.parity;
