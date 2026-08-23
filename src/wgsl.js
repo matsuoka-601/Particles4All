@@ -422,6 +422,14 @@ fn main(@builtin(global_invocation_id) gid: vec3u,
 }
 `;
 
+// The reorder is split across two entry points because it used to bind twelve
+// storage buffers in one compute stage, and maxStorageBuffersPerShaderStage is
+// 10 on Apple GPUs (Metal, via both Dawn and WebKit) - the pipeline simply would
+// not build there. Pass one records where each particle landed in slotOf, pass
+// two replays that permutation for the phase/rest pair, so the result is bit for
+// bit what the single pass produced. Consecutive dispatches inside one compute
+// pass see each other's writes, which is the same guarantee the prefix-scan
+// chain above already depends on.
 export const scatterWGSL = `
 @group(0) @binding(1) var<storage, read>       pos       : array<vec4f>;
 @group(0) @binding(2) var<storage, read>       vel       : array<vec4f>;
@@ -431,10 +439,7 @@ export const scatterWGSL = `
 @group(0) @binding(6) var<storage, read_write> pred2     : array<vec4f>;
 @group(0) @binding(7) var<storage, read>       cellStart : array<u32>;
 @group(0) @binding(8) var<storage, read_write> cursor    : array<atomic<u32>>;
-@group(0) @binding(9) var<storage, read>       body      : array<vec4u>;
-@group(0) @binding(10) var<storage, read>      rest      : array<vec4f>;
-@group(0) @binding(11) var<storage, read_write> body2    : array<vec4u>;
-@group(0) @binding(12) var<storage, read_write> rest2    : array<vec4f>;
+@group(0) @binding(9) var<storage, read_write> slotOf    : array<u32>;
 
 @compute @workgroup_size(256)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
@@ -442,9 +447,25 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if (i >= P.n) { return; }
   let cell = cellIndex(cellOf(pred[i].xyz));
   let slot = cellStart[cell] + atomicAdd(&cursor[cell], 1u);
+  slotOf[i]   = slot;
   pos2[slot]  = pos[i];
   vel2[slot]  = vel[i];
   pred2[slot] = pred[i];
+}
+`;
+
+export const scatterPhaseWGSL = `
+@group(0) @binding(1) var<storage, read>       body   : array<vec4u>;
+@group(0) @binding(2) var<storage, read>       rest   : array<vec4f>;
+@group(0) @binding(3) var<storage, read_write> body2  : array<vec4u>;
+@group(0) @binding(4) var<storage, read_write> rest2  : array<vec4f>;
+@group(0) @binding(5) var<storage, read>       slotOf : array<u32>;
+
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= P.n) { return; }
+  let slot = slotOf[i];
   body2[slot] = body[i];
   rest2[slot] = rest[i];
 }
