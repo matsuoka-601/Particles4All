@@ -47,7 +47,9 @@ export class Sim {
     make('scanBlock', S.scanBlockWGSL);
     make('scanBlocks', S.scanBlocksWGSL);
     make('scanAdd', S.scanAddWGSL);
-    make('scatter', S.scatterWGSL);
+    make('scatterSlot', S.scatterSlotWGSL);
+    make('scatterMove', S.scatterMoveWGSL);
+    make('scatterPhase', S.scatterPhaseWGSL);
     make('lambda', S.lambdaWGSL);
     make('delta', S.deltaWGSL);
     make('bodyClear', S.bodyClearWGSL);
@@ -99,6 +101,7 @@ export class Sim {
     }
     alloc('lambda', cap * 4);
     alloc('density', cap * 4);
+    alloc('slot', cap * 4);
     alloc('corr', vec4);
     alloc('normal', vec4);
     alloc('cellCount', (this.nCells + 1) * 4);
@@ -239,7 +242,9 @@ export class Sim {
     run('scanBlock', 'scanBlock', groups(this.nCells));
     run('scanBlocks', 'scanBlocks', 1);
     run('scanAdd', 'scanAdd', cG);
-    run('scatter', `scatter${par}`, nG);
+    run('scatterSlot', `scatterSlot${par}`, nG);
+    run('scatterMove', `scatterMove${par}`, nG);
+    run('scatterPhase', `scatterPhase${par}`, nG);
     pass2.end();
     this.dev.queue.submit([enc.finish()]);
     this.parity ^= 1;
@@ -303,10 +308,13 @@ export class Sim {
       const o = par === 0 ? 'B' : 'A';
       g[`predict${par}`] = this.bg('predict', [B['pos' + s], B['vel' + s], B['pred' + s]]);
       g[`count${par}`] = this.bg('count', [B['pred' + s], B.cellCount]);
-      g[`scatter${par}`] = this.bg('scatter', [
-        B['pos' + s], B['vel' + s], B['pred' + s],
-        B['pos' + o], B['vel' + o], B['pred' + o],
-        B.cellStart, B.cursor, B['body' + s], B['rest' + s], B['body' + o], B['rest' + o]]);
+      g[`scatterSlot${par}`] = this.bg('scatterSlot', [
+        B['pred' + s], B.cellStart, B.cursor, B.slot]);
+      g[`scatterMove${par}`] = this.bg('scatterMove', [
+        B.slot, B['pos' + s], B['vel' + s], B['pred' + s],
+        B['pos' + o], B['vel' + o], B['pred' + o]]);
+      g[`scatterPhase${par}`] = this.bg('scatterPhase', [
+        B.slot, B['body' + s], B['rest' + s], B['body' + o], B['rest' + o]]);
 
       g[`velFromPos${par}`] = this.bg('velFromPos', [B['pos' + s], B['vel' + s], B['pred' + s]]);
       g[`xsph${par}`] = this.bg('xsph', [B['pred' + s], B['vel' + s], B.density, B.corr, B.cellStart]);
@@ -476,7 +484,9 @@ export class Sim {
       run2('scanBlock', 'scanBlock', groups(this.nCells));
       run2('scanBlocks', 'scanBlocks', 1);
       run2('scanAdd', 'scanAdd', cG);
-      run2('scatter', `scatter${par}`, nG);
+      run2('scatterSlot', `scatterSlot${par}`, nG);
+      run2('scatterMove', `scatterMove${par}`, nG);
+      run2('scatterPhase', `scatterPhase${par}`, nG);
       pass2.end();
       this.parity ^= 1;
       this.predParity = this.parity;

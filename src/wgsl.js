@@ -422,31 +422,55 @@ fn main(@builtin(global_invocation_id) gid: vec3u,
 }
 `;
 
-export const scatterWGSL = `
-@group(0) @binding(1) var<storage, read>       pos       : array<vec4f>;
-@group(0) @binding(2) var<storage, read>       vel       : array<vec4f>;
-@group(0) @binding(3) var<storage, read>       pred      : array<vec4f>;
-@group(0) @binding(4) var<storage, read_write> pos2      : array<vec4f>;
-@group(0) @binding(5) var<storage, read_write> vel2      : array<vec4f>;
-@group(0) @binding(6) var<storage, read_write> pred2     : array<vec4f>;
-@group(0) @binding(7) var<storage, read>       cellStart : array<u32>;
-@group(0) @binding(8) var<storage, read_write> cursor    : array<atomic<u32>>;
-@group(0) @binding(9) var<storage, read>       body      : array<vec4u>;
-@group(0) @binding(10) var<storage, read>      rest      : array<vec4f>;
-@group(0) @binding(11) var<storage, read_write> body2    : array<vec4u>;
-@group(0) @binding(12) var<storage, read_write> rest2    : array<vec4f>;
+export const scatterSlotWGSL = `
+@group(0) @binding(1) var<storage, read>       pred      : array<vec4f>;
+@group(0) @binding(2) var<storage, read>       cellStart : array<u32>;
+@group(0) @binding(3) var<storage, read_write> cursor    : array<atomic<u32>>;
+@group(0) @binding(4) var<storage, read_write> slot      : array<u32>;
 
 @compute @workgroup_size(256)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
   let i = gid.x;
   if (i >= P.n) { return; }
   let cell = cellIndex(cellOf(pred[i].xyz));
-  let slot = cellStart[cell] + atomicAdd(&cursor[cell], 1u);
-  pos2[slot]  = pos[i];
-  vel2[slot]  = vel[i];
-  pred2[slot] = pred[i];
-  body2[slot] = body[i];
-  rest2[slot] = rest[i];
+  slot[i] = cellStart[cell] + atomicAdd(&cursor[cell], 1u);
+}
+`;
+
+export const scatterMoveWGSL = `
+@group(0) @binding(1) var<storage, read>       slot  : array<u32>;
+@group(0) @binding(2) var<storage, read>       pos   : array<vec4f>;
+@group(0) @binding(3) var<storage, read>       vel   : array<vec4f>;
+@group(0) @binding(4) var<storage, read>       pred  : array<vec4f>;
+@group(0) @binding(5) var<storage, read_write> pos2  : array<vec4f>;
+@group(0) @binding(6) var<storage, read_write> vel2  : array<vec4f>;
+@group(0) @binding(7) var<storage, read_write> pred2 : array<vec4f>;
+
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= P.n) { return; }
+  let s = slot[i];
+  pos2[s]  = pos[i];
+  vel2[s]  = vel[i];
+  pred2[s] = pred[i];
+}
+`;
+
+export const scatterPhaseWGSL = `
+@group(0) @binding(1) var<storage, read>       slot  : array<u32>;
+@group(0) @binding(2) var<storage, read>       body  : array<vec4u>;
+@group(0) @binding(3) var<storage, read>       rest  : array<vec4f>;
+@group(0) @binding(4) var<storage, read_write> body2 : array<vec4u>;
+@group(0) @binding(5) var<storage, read_write> rest2 : array<vec4f>;
+
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  let i = gid.x;
+  if (i >= P.n) { return; }
+  let s = slot[i];
+  body2[s] = body[i];
+  rest2[s] = rest[i];
 }
 `;
 
