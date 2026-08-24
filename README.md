@@ -14,6 +14,12 @@ The features of this repo are like below:
 
 <img width="800" height="482" alt="レコーディング 2026-08-22 140438" src="https://github.com/user-attachments/assets/ac4e999f-245a-49df-afd7-9222457e04f9" />
 
+## Demo video
+
+
+https://github.com/user-attachments/assets/03de9371-a12c-4969-827c-8bfd22e4ab59
+
+
 ## Simulation
 ### Unified particle physics
 (TODO: write)
