@@ -947,9 +947,13 @@ if (!navigator.gpu) {
     function frame(now) {
       resize();
 
-      const dt = Math.max(0, Math.min((now - last) / 1000, 0.05));
+      const raw = (now - last) / 1000;
+      const dt = Math.max(0, Math.min(raw, 0.05));
       last = now;
-      fpsAcc += dt; fpsN++;
+      // The solver wants the clamped delta. The fps average does not: summing
+      // the clamped value pins the readout at 1 / 0.05 = 20 as soon as a frame
+      // takes longer than 50 ms, so everything slower reads as exactly "20".
+      fpsAcc += raw; fpsN++;
       if (fpsAcc > 0.25) { shown = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
 
       ssfr.ior = ray.ior;
